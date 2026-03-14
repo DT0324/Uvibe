@@ -1,4 +1,4 @@
-package com.example.uvibe.views
+package com.example.uvibe.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
