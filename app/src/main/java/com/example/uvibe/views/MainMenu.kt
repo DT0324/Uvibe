@@ -1,36 +1,105 @@
-package com.example.uvibe
+package com.example.uvibe.views
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity // 注意：Compose 通常使用 ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-// 导入我们在 views 包下写好的界面
-import com.example.uvibe.views.MainMenuScreen
+// 直接定义为顶层函数，这是 Compose 的标准做法
+@Composable
+fun MainMenuScreen() {
+    // 记录当前选中的页面索引：0 为 UV Tracker, 1 为 Awareness & Education
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // 开启边缘到边缘显示 (沉浸式状态栏)
-        enableEdgeToEdge()
-
-        // 舍弃原有的 setContentView(R.layout.activity_main)
-        setContent {
-            // 使用 Box 和 systemBarsPadding 来替代原来繁琐的 WindowInsetsCompat 代码
-            // 它的作用是自动留出状态栏和底部导航条的安全距离，防止 UI 被遮挡
+    // 主背景
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F6FA))
+            .padding(16.dp)
+    ) {
+        // --- 顶部导航栏 (Segmented Control) ---
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFE9ECEF)),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 左侧按钮：UV Tracker
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (selectedTabIndex == 0) Color(0xFF1C64F2) else Color.Transparent)
+                    .clickable { selectedTabIndex = 0 },
+                contentAlignment = Alignment.Center
             ) {
-                // 直接挂载主界面
-                MainMenuScreen()
+                Text(
+                    text = "UV Tracker",
+                    color = if (selectedTabIndex == 0) Color.White else Color(0xFF6B7280),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            // 右侧按钮：Awareness & Education
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (selectedTabIndex == 1) Color(0xFF1C64F2) else Color.Transparent)
+                    .clickable { selectedTabIndex = 1 },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Awareness & Education",
+                    color = if (selectedTabIndex == 1) Color.White else Color(0xFF6B7280),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- 下方页面内容容器 ---
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (selectedTabIndex == 0) {
+                UVTrackerPageBackground()
+            } else {
+                AwarenessPageBackground()
+            }
+        }
+    }
+}
+
+@Composable
+fun UVTrackerPageBackground() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text("UV Tracker 页面内容区域", color = Color.Gray)
+    }
+}
+
+@Composable
+fun AwarenessPageBackground() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text("Awareness & Education 页面内容区域", color = Color.Gray)
     }
 }
