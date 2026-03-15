@@ -2,6 +2,7 @@ package com.example.uvibe.network
 
 import com.example.uvibe.BuildConfig
 import com.example.uvibe.ui.model.AwarenessChartUiModel
+import com.example.uvibe.ui.model.ChartDataPoint
 import com.example.uvibe.ui.model.ClothingItemUiModel
 import com.example.uvibe.ui.model.ClothingRecommendationUiModel
 import com.example.uvibe.ui.model.ProtectionTipUiModel
@@ -32,21 +33,32 @@ object OnboardingRemoteContent {
         apiService: UvibeApiService = UvibeApiClient.service,
     ): List<AwarenessChartUiModel> {
         val response = apiService.getCancerInfo()
-        return response.data
-            .takeIf { it.isNotEmpty() }
-            ?.map { benchmark ->
-                AwarenessChartUiModel(
-                    title = "Skin cancer benchmark: ${benchmark.ageGroup.orFallback("Unknown age group")}",
-                    subtitle = buildString {
-                        append("Incidence rate: ")
-                        append(benchmark.incidenceRate.formatRate())
-                        append(" | Mortality rate: ")
-                        append(benchmark.mortalityRate.formatRate())
-                    },
-                    highlight = benchmark.riskSummary.orFallback("No additional summary provided."),
-                )
-            }
-            ?: error("Cancer awareness data is empty.")
+        val rawData = response.data
+
+        if (rawData.isNullOrEmpty()) {
+            error("Cancer awareness data is empty.")
+        }
+
+
+        val chartPoints = rawData.map { benchmark ->
+            ChartDataPoint(
+                ageGroup = benchmark.ageGroup.orFallback("Unknown"),
+                incidenceRate = benchmark.incidenceRate?.toFloat() ?: 0f,
+                mortalityRate = benchmark.mortalityRate?.toFloat() ?: 0f
+            )
+        }
+
+
+        val singleAggregatedChart = AwarenessChartUiModel(
+            title = "Skin Cancer Rates by Age",
+            subtitle = "Incidence vs Mortality (Percentage)",
+
+            highlight = rawData.firstOrNull()?.riskSummary.orFallback("Compare incidence and mortality trends across different age groups."),
+            chartData = chartPoints
+        )
+
+
+        return listOf(singleAggregatedChart)
     }
 }
 

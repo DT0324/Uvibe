@@ -51,6 +51,13 @@ data class AwarenessChartUiModel(
     val title: String,
     val subtitle: String,
     val highlight: String,
+    val chartData: List<ChartDataPoint> = emptyList()
+)
+
+data class ChartDataPoint(
+    val ageGroup: String,
+    val incidenceRate: Float,
+    val mortalityRate: Float
 )
 
 data class MythInfoUiModel(

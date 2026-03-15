@@ -17,9 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.uvibe.network.OnboardingRemoteContent
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.uvibe.network.RecommendationContentUi
 import com.example.uvibe.ui.components.AwarenessChartCard
 import com.example.uvibe.ui.components.ClothingRecommendationCard
@@ -41,49 +41,15 @@ import com.example.uvibe.ui.components.UVStatusCard
 import com.example.uvibe.ui.model.AwarenessChartUiModel
 import com.example.uvibe.ui.model.MockUvData
 import com.example.uvibe.ui.model.MythInfoUiModel
-import java.io.IOException
-import retrofit2.HttpException
-
-private sealed interface PageSectionState<out T> {
-    data object Loading : PageSectionState<Nothing>
-
-    data class Success<T>(
-        val content: T,
-    ) : PageSectionState<T>
-
-    data class Error(
-        val message: String,
-    ) : PageSectionState<Nothing>
-}
 
 @Composable
-fun MainMenuScreen() {
+fun MainMenuScreen(
+    viewModel: MainMenuViewModel = viewModel()
+) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var refreshTrigger by remember { mutableIntStateOf(0) }
 
-    val recommendationState by produceState<PageSectionState<RecommendationContentUi>>(
-        initialValue = PageSectionState.Loading,
-        key1 = refreshTrigger,
-    ) {
-        value = runCatching {
-            OnboardingRemoteContent.loadRecommendationContent()
-        }.fold(
-            onSuccess = { PageSectionState.Success(it) },
-            onFailure = { PageSectionState.Error(it.toUserMessage()) },
-        )
-    }
-
-    val awarenessState by produceState<PageSectionState<List<AwarenessChartUiModel>>>(
-        initialValue = PageSectionState.Loading,
-        key1 = refreshTrigger,
-    ) {
-        value = runCatching {
-            OnboardingRemoteContent.loadAwarenessCharts()
-        }.fold(
-            onSuccess = { PageSectionState.Success(it) },
-            onFailure = { PageSectionState.Error(it.toUserMessage()) },
-        )
-    }
+    val recommendationState by viewModel.recommendationState.collectAsState()
+    val awarenessState by viewModel.awarenessState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -91,6 +57,7 @@ fun MainMenuScreen() {
             .background(Color(0xFFF5F6FA))
             .padding(16.dp),
     ) {
+        // --- 顶部导航栏 ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,35 +105,22 @@ fun MainMenuScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // --- 底部内容区域 ---
         Box(modifier = Modifier.fillMaxSize()) {
             if (selectedTabIndex == 0) {
                 UVTrackerPageBackground(
                     recommendationState = recommendationState,
-                    onRetry = { refreshTrigger++ },
+                    onRetry = { viewModel.loadAllData() }, // 直接调用 ViewModel 的刷新方法
                 )
             } else {
                 AwarenessPageBackground(
                     awarenessState = awarenessState,
                     myths = MockUvData.myths,
-                    onRetry = { refreshTrigger++ },
+                    onRetry = { viewModel.loadAllData() }, // 直接调用 ViewModel 的刷新方法
                 )
             }
         }
     }
-}
-
-@Composable
-fun UVTrackerPageBackground() {
-    UVTrackerPageBackground(
-        recommendationState = PageSectionState.Success(
-            RecommendationContentUi(
-                status = MockUvData.currentUvStatus,
-                protectionTip = MockUvData.protectionTip,
-                clothingRecommendation = MockUvData.clothingRecommendation,
-            ),
-        ),
-        onRetry = {},
-    )
 }
 
 @Composable
@@ -198,15 +152,6 @@ private fun UVTrackerPageBackground(
 }
 
 @Composable
-fun AwarenessPageBackground() {
-    AwarenessPageBackground(
-        awarenessState = PageSectionState.Success(MockUvData.awarenessCharts),
-        myths = MockUvData.myths,
-        onRetry = {},
-    )
-}
-
-@Composable
 private fun AwarenessPageBackground(
     awarenessState: PageSectionState<List<AwarenessChartUiModel>>,
     myths: List<MythInfoUiModel>,
@@ -231,20 +176,11 @@ private fun AwarenessPageBackground(
             }
         }
 
+
         myths.firstOrNull()?.let { myth ->
             MythInfoCard(mythInfo = myth)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
     }
-}
-
-private fun Throwable.toUserMessage(): String = when (this) {
-    is HttpException -> when (code()) {
-        400 -> "The request was rejected by the AWS API."
-        404 -> "No onboarding data was returned for the current UV lookup."
-        else -> "The AWS API returned an error (${code()})."
-    }
-    is IOException -> "Network error while contacting the AWS API."
-    else -> message ?: "Unable to load onboarding data right now."
 }
