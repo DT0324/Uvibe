@@ -57,31 +57,58 @@ private fun DressingRecommendationResponseDto.toRecommendationContentUi(
         error("Clothing recommendation data is missing.")
     }
 
-    val resolvedUvIndex = uvInfo?.uvIndex?.toInt() ?: defaultUvIndex
-    val riskLevel = uvInfo?.riskLevel.toUvRiskLevel(resolvedUvIndex)
-    val recommendationText = clothingInfo?.recommendationText.orFallback(defaultClothingHeadline(riskLevel))
+    val resolvedUvIndex = uvInfo?.uvIndex ?: defaultUvIndex
+    val riskLevel = uvRiskLevelFor(resolvedUvIndex)
+    val locationName = uvInfo?.location
+        .orFallback(uvInfo?.locationId?.let { "Location ID $it" } ?: "AWS UV feed")
+    val updatedAtLabel = (uvInfo?.timestamp ?: uvInfo?.recordedAt)
+        .toUpdatedAtLabel()
     val clothingItems = buildList {
-        if (clothingInfo?.hatRequired == 1) {
+        clothingInfo?.hatType?.takeIf { it.isNotBlank() }?.let { hatType ->
+            add(
+                ClothingItemUiModel(
+                    name = hatType,
+                    reason = "Recommended headwear for the current UV level.",
+                ),
+            )
+        }
+        clothingInfo?.sunscreenSpf?.takeIf { it.isNotBlank() }?.let { sunscreenSpf ->
+            add(
+                ClothingItemUiModel(
+                    name = "Sunscreen",
+                    reason = "Use $sunscreenSpf sunscreen for sun protection.",
+                ),
+            )
+        }
+        clothingInfo?.shirtType?.takeIf { it.isNotBlank() }?.let { shirtType ->
+            add(
+                ClothingItemUiModel(
+                    name = shirtType,
+                    reason = "Recommended clothing coverage for safer outdoor time.",
+                ),
+            )
+        }
+        if (clothingInfo?.hatRequired == 1 && none { it.name.equals("Wide-brim hat", ignoreCase = true) }) {
             add(
                 ClothingItemUiModel(
                     name = "Wide-brim hat",
-                    reason = "Marked as required by the AWS recommendation for this UV level.",
+                    reason = "Required by the live recommendation response for this UV level.",
                 ),
             )
         }
-        if (clothingInfo?.sunglassesRequired == 1) {
+        if (clothingInfo?.sunglassesRequired == 1 && none { it.name.equals("Sunglasses", ignoreCase = true) }) {
             add(
                 ClothingItemUiModel(
                     name = "Sunglasses",
-                    reason = "The API indicates eye protection is needed for current conditions.",
+                    reason = "Required by the live recommendation response for this UV level.",
                 ),
             )
         }
-        if (clothingInfo?.longSleeveRequired == 1) {
+        if (clothingInfo?.longSleeveRequired == 1 && none { it.name.contains("Long", ignoreCase = true) }) {
             add(
                 ClothingItemUiModel(
                     name = "Long-sleeve shirt",
-                    reason = "The API recommends added skin coverage for safer time outdoors.",
+                    reason = "Required by the live recommendation response for this UV level.",
                 ),
             )
         }
@@ -89,19 +116,21 @@ private fun DressingRecommendationResponseDto.toRecommendationContentUi(
             add(
                 ClothingItemUiModel(
                     name = "General sun protection",
-                    reason = recommendationText,
+                    reason = clothingInfo?.recommendationText.orFallback(defaultClothingHeadline(riskLevel)),
                 ),
             )
         }
     }
+    val recommendationText = clothingInfo?.recommendationText
+        .orFallback(buildRecommendationHeadline(riskLevel, clothingItems))
 
     return RecommendationContentUi(
         status = UvStatusUiModel(
             uvIndex = resolvedUvIndex,
-            levelText = uvInfo?.riskLevel.orFallback(riskLevel.label),
+            levelText = riskLevel.label,
             riskLevel = riskLevel,
-            locationName = uvInfo?.locationId?.let { "Location ID $it" } ?: "AWS UV feed",
-            updatedAt = uvInfo?.recordedAt.toUpdatedAtLabel(),
+            locationName = locationName,
+            updatedAt = updatedAtLabel,
         ),
         protectionTip = ProtectionTipUiModel(
             title = "Today's protection tip",
@@ -115,20 +144,25 @@ private fun DressingRecommendationResponseDto.toRecommendationContentUi(
     )
 }
 
-private fun String?.toUvRiskLevel(fallbackUvIndex: Int): UvRiskLevel = when (this?.trim()?.lowercase()) {
-    "low" -> UvRiskLevel.Low
-    "moderate" -> UvRiskLevel.Moderate
-    "high" -> UvRiskLevel.High
-    "very high" -> UvRiskLevel.VeryHigh
-    "extreme" -> UvRiskLevel.Extreme
-    else -> uvRiskLevelFor(fallbackUvIndex)
-}
-
 private fun Double?.formatRate(): String =
     this?.let { String.format(Locale.US, "%.1f", it) } ?: "N/A"
 
 private fun String?.orFallback(fallback: String): String =
     this?.takeIf { it.isNotBlank() } ?: fallback
+
+private fun buildRecommendationHeadline(
+    riskLevel: UvRiskLevel,
+    clothingItems: List<ClothingItemUiModel>,
+): String {
+    val itemSummary = clothingItems
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(separator = ", ") { it.name }
+        ?.takeIf { it.isNotBlank() }
+
+    return itemSummary?.let {
+        "${defaultClothingHeadline(riskLevel)} Recommended: $it."
+    } ?: defaultClothingHeadline(riskLevel)
+}
 
 private fun String?.toUpdatedAtLabel(): String {
     if (this.isNullOrBlank()) {

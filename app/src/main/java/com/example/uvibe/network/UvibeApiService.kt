@@ -36,10 +36,12 @@ data class DressingRecommendationResponseDto(
 data class UvInfoDto(
     @SerializedName("uv_record_id")
     val uvRecordId: Int? = null,
+    @SerializedName("uv_index")
+    val uvIndex: Int? = null,
+    val location: String? = null,
+    val timestamp: String? = null,
     @SerializedName("location_id")
     val locationId: Int? = null,
-    @SerializedName("uv_index")
-    val uvIndex: Double? = null,
     @SerializedName("risk_level")
     val riskLevel: String? = null,
     @SerializedName("recorded_at")
@@ -47,10 +49,17 @@ data class UvInfoDto(
 )
 
 data class ClothingInfoDto(
-    @SerializedName("clothing_rec_id")
-    val clothingRecommendationId: Int? = null,
+    val id: Int? = null,
     @SerializedName("uv_record_id")
     val uvRecordId: Int? = null,
+    @SerializedName("hat_type")
+    val hatType: String? = null,
+    @SerializedName("sunscreen_spf")
+    val sunscreenSpf: String? = null,
+    @SerializedName("shirt_type")
+    val shirtType: String? = null,
+    @SerializedName("clothing_rec_id")
+    val clothingRecommendationId: Int? = null,
     @SerializedName("rec_text")
     val recommendationText: String? = null,
     @SerializedName("hat_required")
