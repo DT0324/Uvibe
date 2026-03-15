@@ -44,7 +44,7 @@ android {
             configValue(
                 "AWS_BASE_URL",
                 "https://kco1aiur5c.execute-api.us-east-1.amazonaws.com/dev/",
-            ).asBuildConfigString(),
+                ).asBuildConfigString(),
         )
         buildConfigField(
             "String",
@@ -52,12 +52,20 @@ android {
             configValue(
                 "AWS_API_KEY",
                 "U6waA928AiaOOVMhBlgUs2mJOgkXZUfJag34mez9",
-            ).asBuildConfigString(),
+                ).asBuildConfigString(),
         )
         buildConfigField(
             "int",
             "DEFAULT_DRESSING_UV_INDEX",
             configValue("DEFAULT_DRESSING_UV_INDEX", "8"),
+        )
+        buildConfigField(
+            "String",
+            "OWM_API_KEY",
+            configValue(
+                "OWM_API_KEY",
+                "c30e5cb72805b8a9c011ee559b1f64d2",
+                ).asBuildConfigString(),
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -108,4 +116,7 @@ dependencies {
 
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // Google Location Service
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 }

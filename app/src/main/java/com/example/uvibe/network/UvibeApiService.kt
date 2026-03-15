@@ -92,3 +92,31 @@ object UvibeApiClient {
             .create(UvibeApiService::class.java)
     }
 }
+
+data class OwmUvResponseDto(
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val date_iso: String? = null,
+    val value: Double? = null
+)
+
+interface OpenWeatherApiService {
+    @GET("uvi") // 完整路径会变成 https://api.openweathermap.org/data/2.5/uvi
+    suspend fun getCurrentUv(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        // 这里需要你在 local.properties 里配置 OWM_API_KEY
+        @Query("appid") apiKey: String = BuildConfig.OWM_API_KEY
+    ): OwmUvResponseDto
+}
+
+object OpenWeatherApiClient {
+    val service: OpenWeatherApiService by lazy {
+        Retrofit.Builder()
+            // 绑定 OpenWeatherMap 的基础 URL
+            .baseUrl("https://api.openweathermap.org/data/2.5/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OpenWeatherApiService::class.java)
+    }
+}

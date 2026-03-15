@@ -1,6 +1,7 @@
 package com.example.uvibe.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,9 +35,10 @@ import androidx.compose.ui.unit.sp
 import com.example.uvibe.ui.model.AwarenessChartUiModel
 import com.example.uvibe.ui.model.ClothingItemUiModel
 import com.example.uvibe.ui.model.ClothingRecommendationUiModel
-import com.example.uvibe.ui.model.MockUvData
 import com.example.uvibe.ui.model.MythInfoUiModel
+import com.example.uvibe.ui.model.PreviewUvData
 import com.example.uvibe.ui.model.ProtectionTipUiModel
+import com.example.uvibe.ui.model.StaticUvData
 import com.example.uvibe.ui.model.UvRiskLevel
 import com.example.uvibe.ui.model.UvStatusUiModel
 import com.example.uvibe.ui.theme.UvibeTheme
@@ -44,16 +46,20 @@ import com.example.uvibe.ui.theme.UvibeTheme
 @Composable
 fun UVStatusCard(
     status: UvStatusUiModel,
+    onRefresh: () -> Unit, // 保持这个回调参数不变
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onRefresh() }, // 👈 核心魔法：让整张卡片变得可点击！
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // 恢复成最清爽的纯文本标题
             Text(
                 text = "Current UV",
                 style = MaterialTheme.typography.titleMedium,
@@ -241,7 +247,7 @@ fun AwarenessChartCard(
 
             // 2. 核心图表区域
             if (chart.chartData.isNotEmpty()) {
-                // 动态计算 Y 轴的最大值，并增加 20% 的头部空间，完美容纳顶部的百分比文字
+
                 val maxRate = chart.chartData.maxOfOrNull {
                     maxOf(it.incidenceRate, it.mortalityRate)
                 }?.coerceAtLeast(1f) ?: 100f
@@ -260,8 +266,8 @@ fun AwarenessChartCard(
                         val mortalityFraction = (point.mortalityRate / yAxisMax).coerceIn(0f, 1f)
 
                         // 格式化百分比文本 (保留一位小数)
-                        val incidenceText = java.lang.String.format(java.util.Locale.US, "%.1f%%", point.incidenceRate)
-                        val mortalityText = java.lang.String.format(java.util.Locale.US, "%.1f%%", point.mortalityRate)
+                        val incidenceText = java.lang.String.format(java.util.Locale.US, "%.1f", point.incidenceRate)
+                        val mortalityText = java.lang.String.format(java.util.Locale.US, "%.1f", point.mortalityRate)
 
                         // 每一组（年龄段的X轴标签 + 两根带数字的柱子）
                         Column(
@@ -504,7 +510,7 @@ private fun LabelValueText(
 @Composable
 private fun UVStatusCardPreview() {
     UvibeTheme {
-        UVStatusCard(status = MockUvData.currentUvStatus)
+        UVStatusCard(status = PreviewUvData.currentUvStatus,onRefresh = {})
     }
 }
 
@@ -512,7 +518,7 @@ private fun UVStatusCardPreview() {
 @Composable
 private fun UVRiskBadgePreview() {
     UvibeTheme {
-        UVRiskBadge(riskLevel = MockUvData.currentUvStatus.riskLevel)
+        UVRiskBadge(riskLevel = PreviewUvData.currentUvStatus.riskLevel)
     }
 }
 
@@ -520,7 +526,7 @@ private fun UVRiskBadgePreview() {
 @Composable
 private fun ProtectionTipCardPreview() {
     UvibeTheme {
-        ProtectionTipCard(tip = MockUvData.protectionTip)
+        ProtectionTipCard(tip = PreviewUvData.protectionTip)
     }
 }
 
@@ -552,7 +558,7 @@ private fun ErrorStateViewPreview() {
 @Composable
 private fun AwarenessChartCardPreview() {
     UvibeTheme {
-        AwarenessChartCard(chart = MockUvData.awarenessCharts.first())
+        AwarenessChartCard(chart = PreviewUvData.awarenessCharts.first())
     }
 }
 
@@ -560,7 +566,7 @@ private fun AwarenessChartCardPreview() {
 @Composable
 private fun MythInfoCardPreview() {
     UvibeTheme {
-        MythInfoCard(mythInfo = MockUvData.myths.first())
+        MythInfoCard(mythInfo = StaticUvData.myths.first())
     }
 }
 
@@ -568,7 +574,7 @@ private fun MythInfoCardPreview() {
 @Composable
 private fun ClothingRecommendationCardPreview() {
     UvibeTheme {
-        ClothingRecommendationCard(recommendation = MockUvData.clothingRecommendation)
+        ClothingRecommendationCard(recommendation = PreviewUvData.clothingRecommendation)
     }
 }
 
@@ -576,6 +582,6 @@ private fun ClothingRecommendationCardPreview() {
 @Composable
 private fun ClothingItemRowPreview() {
     UvibeTheme {
-        ClothingItemRow(item = MockUvData.clothingRecommendation.items.first())
+        ClothingItemRow(item = PreviewUvData.clothingRecommendation.items.first())
     }
 }

@@ -1,8 +1,10 @@
 package com.example.uvibe.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uvibe.network.OnboardingRemoteContent
+import com.example.uvibe.network.OpenWeatherApiClient
 import com.example.uvibe.network.RecommendationContentUi
 import com.example.uvibe.ui.model.AwarenessChartUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,5 +69,31 @@ class MainMenuViewModel : ViewModel() {
         }
         is IOException -> "Network error while contacting the AWS API."
         else -> message ?: "Unable to load onboarding data right now."
+    }
+
+    @SuppressLint("MissingPermission")
+    fun loadDataWithLocation(lat: Double, lon: Double) {
+        _recommendationState.value = PageSectionState.Loading
+
+        viewModelScope.launch {
+            val result = runCatching {
+                // 1. 先去 OpenWeatherMap 查真实的 UV 指数
+                val owmResponse = OpenWeatherApiClient.service.getCurrentUv(lat, lon)
+
+                // OWM 返回的是 Double (比如 8.2)，我们向下取整，因为咱们 AWS 数据库里存的是 Int
+                val realUvIndex = owmResponse.value?.toInt() ?: 11 // 如果获取失败，用 8 兜底
+
+                // 2. 拿着这个真实的 UV 指数，去你们的 AWS 请求穿搭推荐
+                OnboardingRemoteContent.loadRecommendationContent(uvIndex = realUvIndex)
+            }
+
+            _recommendationState.value = result.fold(
+                onSuccess = { PageSectionState.Success(it) },
+                onFailure = { PageSectionState.Error(it.toUserMessage()) }
+            )
+        }
+
+        // 图表数据不需要 UV 指数，照常加载即可
+        fetchAwareness()
     }
 }

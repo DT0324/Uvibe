@@ -51,8 +51,8 @@ object OnboardingRemoteContent {
 
         val singleAggregatedChart = AwarenessChartUiModel(
             title = "Skin Cancer Rates by Age",
-            subtitle = "Incidence vs Mortality (Percentage)",
 
+            subtitle = "Incidence vs Mortality (per 100,000 people)",
             highlight = rawData.firstOrNull()?.riskSummary.orFallback("Compare incidence and mortality trends across different age groups."),
             chartData = chartPoints
         )
