@@ -1,9 +1,11 @@
-package com.example.uvibe.ui.screens
+package com.example.uvibe.ui.screens // 注意检查这里的包名是否与你的项目一致
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,7 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 直接定义为顶层函数，这是 Compose 的标准做法
+import com.example.uvibe.ui.components.*
+import com.example.uvibe.ui.model.MockUvData
+
 @Composable
 fun MainMenuScreen() {
     // 记录当前选中的页面索引：0 为 UV Tracker, 1 为 Awareness & Education
@@ -92,14 +96,40 @@ fun MainMenuScreen() {
 
 @Composable
 fun UVTrackerPageBackground() {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text("UV Tracker 页面内容区域", color = Color.Gray)
+    // 1. verticalScroll: 允许内容超出屏幕时上下滑动
+    // 2. Arrangement.spacedBy(16.dp): 自动在每个卡片之间留出 16dp 的空隙，无需手动写 Spacer
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        UVStatusCard(status = MockUvData.currentUvStatus)
+
+        ProtectionTipCard(tip = MockUvData.protectionTip)
+
+        ClothingRecommendationCard(recommendation = MockUvData.clothingRecommendation)
+
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 @Composable
 fun AwarenessPageBackground() {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text("Awareness & Education 页面内容区域", color = Color.Gray)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        AwarenessChartCard(chart = MockUvData.awarenessCharts.first())
+
+        MythInfoCard(mythInfo = MockUvData.myths.first())
+
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
