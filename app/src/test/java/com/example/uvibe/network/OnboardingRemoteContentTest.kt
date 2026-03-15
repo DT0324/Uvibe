@@ -14,8 +14,50 @@ class OnboardingRemoteContentTest {
             dressingResponse = DressingRecommendationResponseDto(
                 uvInfo = UvInfoDto(
                     uvRecordId = 7823,
+                    uvIndex = 8,
+                    location = "Spotswood",
+                    timestamp = "2026-03-14 10:00:00",
+                ),
+                clothingInfo = ClothingInfoDto(
+                    id = 7823,
+                    uvRecordId = 7823,
+                    hatType = "Wide-brimmed hat",
+                    sunscreenSpf = "SPF 50+",
+                    shirtType = "Long sleeves",
+                ),
+            ),
+        )
+
+        val content = OnboardingRemoteContent.loadRecommendationContent(
+            uvIndex = 8,
+            apiService = fakeService,
+        )
+
+        assertEquals(8, content.status.uvIndex)
+        assertEquals("Very High", content.status.levelText)
+        assertEquals("Spotswood", content.status.locationName)
+        assertEquals("Updated Mar 14, 10:00 AM", content.status.updatedAt)
+        assertTrue(content.protectionTip.description.contains("Wide-brimmed hat"))
+        assertTrue(content.protectionTip.description.contains("Long sleeves"))
+        assertEquals(
+            listOf("Wide-brimmed hat", "Sunscreen", "Long sleeves"),
+            content.clothingRecommendation.items.map { it.name },
+        )
+        assertEquals(
+            "Use SPF 50+ sunscreen for sun protection.",
+            content.clothingRecommendation.items[1].reason,
+        )
+    }
+
+    @Test
+    fun loadRecommendationContent_fallsBackToLiveResponseFieldsWhenSwaggerFieldsAreMissing() = runBlocking {
+        val fakeService = FakeUvibeApiService(
+            cancerInfoResponse = CancerInfoResponseDto(),
+            dressingResponse = DressingRecommendationResponseDto(
+                uvInfo = UvInfoDto(
+                    uvRecordId = 7823,
+                    uvIndex = 8,
                     locationId = 1,
-                    uvIndex = 8.0,
                     riskLevel = "Very High",
                     recordedAt = "2024-01-06 10:17:00",
                 ),
@@ -35,8 +77,6 @@ class OnboardingRemoteContentTest {
             apiService = fakeService,
         )
 
-        assertEquals(8, content.status.uvIndex)
-        assertEquals("Very High", content.status.levelText)
         assertEquals("Location ID 1", content.status.locationName)
         assertEquals("Updated Jan 6, 10:17 AM", content.status.updatedAt)
         assertEquals(
