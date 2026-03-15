@@ -10,6 +10,8 @@ composeBom = "2025.02.00"
 material = "1.13.0"
 activity = "1.11.0"
 constraintlayout = "2.2.1"
+retrofit = "2.11.0"
+gson = "2.13.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -27,6 +29,9 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

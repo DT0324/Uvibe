@@ -155,3 +155,8 @@ object MockUvData {
         else -> UvRiskLevel.Extreme
     }
 }
+
+fun uvRiskLevelFor(uvIndex: Int): UvRiskLevel = MockUvData.riskLevelFor(uvIndex)
+
+fun defaultClothingHeadline(riskLevel: UvRiskLevel): String =
+    "UV ${riskLevel.label.lowercase()} today. Dress for safer outdoor time."
