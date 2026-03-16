@@ -450,7 +450,10 @@ fun MythInfoCard(
     mythInfo: MythInfoUiModel,
     modifier: Modifier = Modifier,
 ) {
-    SectionCard(modifier = modifier) {
+    SectionCard(
+        modifier = modifier,
+        containerColor = Color.White
+    ) {
         Text(
             text = "Myth vs Fact",
             style = MaterialTheme.typography.headlineSmall,
@@ -477,9 +480,10 @@ fun MythInfoCard(
                     Text(
                         text = mythInfo.myth,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF7F1D1D),
+                        color = Color(0xFF4B5563),
                         lineHeight = 24.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = (-0.5).sp
                     )
                 }
             }
@@ -501,9 +505,10 @@ fun MythInfoCard(
                     Text(
                         text = mythInfo.fact,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF064E3B),
+                        color = Color(0xFF4B5563),
                         lineHeight = 24.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = (-0.5).sp
                     )
                 }
             }
