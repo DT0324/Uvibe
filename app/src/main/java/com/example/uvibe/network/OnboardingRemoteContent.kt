@@ -13,6 +13,7 @@ import com.example.uvibe.ui.model.uvRiskLevelFor
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import retrofit2.HttpException
 
 data class RecommendationContentUi(
     val status: UvStatusUiModel,
@@ -25,8 +26,44 @@ object OnboardingRemoteContent {
         uvIndex: Int = BuildConfig.DEFAULT_DRESSING_UV_INDEX,
         apiService: UvibeApiService = UvibeApiClient.service,
     ): RecommendationContentUi {
-        val response = apiService.getDressingRecommendation(uvIndex = uvIndex)
-        return response.toRecommendationContentUi(defaultUvIndex = uvIndex)
+        return try {
+            val response = apiService.getDressingRecommendation(uvIndex = uvIndex)
+            response.toRecommendationContentUi(defaultUvIndex = uvIndex)
+        } catch (e: HttpException) {
+            // 🌟 拦截 404 错误：当后端因为 UV 过低 (如晚上的 0) 查不到防晒数据时，提供本地兜底 UI
+            if (e.code() == 404) {
+                val riskLevel = uvRiskLevelFor(uvIndex)
+                val updatedAtLabel = "Updated " + LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.US))
+
+                RecommendationContentUi(
+                    status = UvStatusUiModel(
+                        uvIndex = uvIndex,
+                        levelText = riskLevel.label, // UV 为 0 时会显示 "Low"
+                        riskLevel = riskLevel,
+                        locationName = "Current Location",
+                        updatedAt = updatedAtLabel
+                    ),
+                    protectionTip = ProtectionTipUiModel(
+                        title = "No sun protection needed",
+                        description = "UV levels are minimal. You can safely enjoy being outdoors without extra sun protection."
+                    ),
+                    clothingRecommendation = ClothingRecommendationUiModel(
+                        uvIndex = uvIndex,
+                        headline = "No special sun protection required right now.",
+                        items = listOf(
+                            ClothingItemUiModel(
+                                name = "Standard clothing",
+                                reason = "Dress comfortably for the weather, no extra UV gear needed."
+                            )
+                        )
+                    )
+                )
+            } else {
+                // 如果是 500 等其他服务器错误，继续抛出，让 ViewModel 处理成普通的 Error 状态
+                throw e
+            }
+        }
     }
 
     suspend fun loadAwarenessCharts(
@@ -39,7 +76,6 @@ object OnboardingRemoteContent {
             error("Cancer awareness data is empty.")
         }
 
-
         val chartPoints = rawData.map { benchmark ->
             ChartDataPoint(
                 ageGroup = benchmark.ageGroup.orFallback("Unknown"),
@@ -48,15 +84,12 @@ object OnboardingRemoteContent {
             )
         }
 
-
         val singleAggregatedChart = AwarenessChartUiModel(
             title = "Skin Cancer Rates by Age",
-
             subtitle = "Incidence vs Mortality (per 100,000 people)",
             highlight = rawData.firstOrNull()?.riskSummary.orFallback("Compare incidence and mortality trends across different age groups."),
             chartData = chartPoints
         )
-
 
         return listOf(singleAggregatedChart)
     }
@@ -69,12 +102,20 @@ private fun DressingRecommendationResponseDto.toRecommendationContentUi(
         error("Clothing recommendation data is missing.")
     }
 
-    val resolvedUvIndex = uvInfo?.uvIndex ?: defaultUvIndex
+    // 🌟 修复 1：强制使用从 ViewModel 传进来的真实 UV 指数 (即 OpenWeatherMap 测出的真实值)
+    // 不再使用后端的 uvInfo?.uvIndex
+    val resolvedUvIndex = defaultUvIndex
+
     val riskLevel = uvRiskLevelFor(resolvedUvIndex)
-    val locationName = uvInfo?.location
-        .orFallback(uvInfo?.locationId?.let { "Location ID $it" } ?: "AWS UV feed")
-    val updatedAtLabel = (uvInfo?.timestamp ?: uvInfo?.recordedAt)
-        .toUpdatedAtLabel()
+
+    // 🌟 修复 2：如果后端没有返回真实的地点字符串，兜底显示 "Current Location"
+    // 不再暴露数据库的 "Location ID $it"
+    val locationName = uvInfo?.location.orFallback("Current Location")
+
+    // 🌟 修复 3：忽略后端的陈旧时间戳，强制使用手机系统当前的真实时间
+    val updatedAtLabel = "Updated " + LocalDateTime.now()
+        .format(DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.US))
+
     val clothingItems = buildList {
         clothingInfo?.hatType?.takeIf { it.isNotBlank() }?.let { hatType ->
             add(
@@ -133,6 +174,7 @@ private fun DressingRecommendationResponseDto.toRecommendationContentUi(
             )
         }
     }
+
     val recommendationText = clothingInfo?.recommendationText
         .orFallback(buildRecommendationHeadline(riskLevel, clothingItems))
 

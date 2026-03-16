@@ -73,7 +73,7 @@ class OnboardingRemoteContentTest {
         )
 
         val content = OnboardingRemoteContent.loadRecommendationContent(
-            uvIndex = 8,
+            uvIndex = 0,
             apiService = fakeService,
         )
 
