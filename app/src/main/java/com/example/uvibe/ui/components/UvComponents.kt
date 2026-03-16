@@ -34,6 +34,7 @@ import com.example.uvibe.ui.model.StaticUvData
 import com.example.uvibe.ui.model.UvRiskLevel
 import com.example.uvibe.ui.model.UvStatusUiModel
 import com.example.uvibe.ui.theme.UvibeTheme
+import java.util.Locale
 
 @Composable
 private fun SectionCard(
@@ -313,13 +314,13 @@ fun AwarenessChartCard(
             val maxRate = chart.chartData.maxOfOrNull {
                 maxOf(it.incidenceRate, it.mortalityRate)
             }?.coerceAtLeast(1f) ?: 100f
-            val yAxisMax = maxRate * 1.2f
+            val yAxisMax = maxRate * 1.3f
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(240.dp)
+                        .height(260.dp)
                         .padding(top = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.Bottom
@@ -337,34 +338,64 @@ fun AwarenessChartCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalAlignment = Alignment.Bottom
                             ) {
                                 // Incidence Bar
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(incidenceFraction)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(Color(0xFFFF8A65), Color(0xFFE64A19))
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Bottom
+                                ) {
+                                    Text(
+                                        text = String.format(Locale.ROOT, "%.0f", point.incidenceRate),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFE64A19),
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(incidenceFraction)
+                                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    listOf(Color(0xFFFF8A65), Color(0xFFE64A19))
+                                                )
                                             )
-                                        )
-                                )
+                                    )
+                                }
 
                                 // Mortality Bar
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(mortalityFraction)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(Color(0xFF64B5F6), Color(0xFF1976D2))
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Bottom
+                                ) {
+                                    Text(
+                                        text = String.format(Locale.ROOT, "%.0f", point.mortalityRate),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1976D2),
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(mortalityFraction)
+                                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    listOf(Color(0xFF64B5F6), Color(0xFF1976D2))
+                                                )
                                             )
-                                        )
-                                )
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
