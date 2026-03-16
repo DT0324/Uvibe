@@ -121,7 +121,6 @@ fun UVStatusCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "Current UV",
                         style = MaterialTheme.typography.labelLarge,
@@ -144,27 +143,6 @@ fun UVStatusCard(
                         color = Color.White,
                         letterSpacing = 2.sp
                     )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = Color.White.copy(alpha = 0.25f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = status.locationName,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -230,7 +208,7 @@ fun ClothingRecommendationCard(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = "Recommended Clothing for You",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color(0xFF1F2937),
                 letterSpacing = (-0.5).sp

@@ -391,7 +391,6 @@ private fun UVTrackerPageBackground(
                 )
                 ProtectionTipCard(tip = recommendationState.content.protectionTip)
                 ClothingRecommendationCard(recommendation = recommendationState.content.clothingRecommendation)
-                CurrentLocationButton(onClick = onRetry) // 👈 Added with spacing provided by Column
             }
         }
         Spacer(modifier = Modifier.height(40.dp))
