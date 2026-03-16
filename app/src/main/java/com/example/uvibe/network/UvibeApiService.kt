@@ -92,3 +92,38 @@ object UvibeApiClient {
             .create(UvibeApiService::class.java)
     }
 }
+
+data class OwmOneCallResponseDto(
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val timezone: String? = null,
+    val current: OwmCurrentDataDto? = null // 👈 对应 JSON 里的 "current"
+)
+
+data class OwmCurrentDataDto(
+    val dt: Long? = null,
+    val uvi: Double? = null, // 👈 终于找到你！这就是我们要的 UV 指数
+    val temp: Double? = null
+)
+
+interface OpenWeatherApiService {
+    @GET("onecall") // 完整路径会变成 https://api.openweathermap.org/data/3.0/onecall
+    suspend fun getCurrentUv(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("exclude") exclude: String = "minutely,hourly,daily,alerts",
+        // 这里需要你在 local.properties 里配置 OWM_API_KEY
+        @Query("appid") apiKey: String = BuildConfig.OWM_API_KEY
+    ): OwmOneCallResponseDto
+}
+
+object OpenWeatherApiClient {
+    val service: OpenWeatherApiService by lazy {
+        Retrofit.Builder()
+            // 绑定 OpenWeatherMap 的基础 URL
+            .baseUrl("https://api.openweathermap.org/data/3.0/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OpenWeatherApiService::class.java)
+    }
+}

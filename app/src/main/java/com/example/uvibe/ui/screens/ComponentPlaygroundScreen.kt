@@ -28,7 +28,9 @@ import com.example.uvibe.ui.components.LoadingStateView
 import com.example.uvibe.ui.components.MythInfoCard
 import com.example.uvibe.ui.components.ProtectionTipCard
 import com.example.uvibe.ui.components.UVStatusCard
-import com.example.uvibe.ui.model.MockUvData
+import com.example.uvibe.ui.model.PreviewUvData
+import com.example.uvibe.ui.model.StaticUvData
+
 import com.example.uvibe.ui.theme.UvibeTheme
 
 private enum class PlaygroundAlertState {
@@ -79,8 +81,14 @@ fun ComponentPlaygroundScreen(
                     )
                     when (alertState) {
                         PlaygroundAlertState.Content -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            UVStatusCard(status = MockUvData.currentUvStatus)
-                            ProtectionTipCard(tip = MockUvData.protectionTip)
+                            // 👈 只需要在这里加上 onRefresh = {}
+                            UVStatusCard(
+                                status = PreviewUvData.currentUvStatus,
+                                onRefresh = { /* Playground 暂时不需要真实刷新逻辑 */ }
+                            )
+
+                            ProtectionTipCard(tip = PreviewUvData.protectionTip)
+
                             CurrentLocationButton(onClick = {})
                         }
 
@@ -100,11 +108,11 @@ fun ComponentPlaygroundScreen(
                 )
             }
 
-            items(MockUvData.awarenessCharts) { chart ->
+            items(PreviewUvData.awarenessCharts) { chart ->
                 AwarenessChartCard(chart = chart)
             }
 
-            items(MockUvData.myths) { myth ->
+            items(StaticUvData.myths) { myth ->
                 MythInfoCard(mythInfo = myth)
             }
 
@@ -116,7 +124,7 @@ fun ComponentPlaygroundScreen(
             }
 
             item {
-                ClothingRecommendationCard(recommendation = MockUvData.clothingRecommendation)
+                ClothingRecommendationCard(recommendation = PreviewUvData.clothingRecommendation)
             }
         }
     }
