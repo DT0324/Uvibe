@@ -212,11 +212,8 @@ private fun ElegantBottomBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(22.dp)
-            .height(72.dp)
-            .shadow(24.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.1f)),
-        color = Color.White,
-        shape = RoundedCornerShape(24.dp)
+            .height(80.dp),
+        color = Color.Black
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -248,7 +245,8 @@ private fun NavBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = if (isSelected) Color(0xFF4F46E5) else Color(0xFF9CA3AF)
+    val contentColor = Color.White
+    val alpha = if (isSelected) 1f else 0.6f
     
     Column(
         modifier = modifier
@@ -257,26 +255,18 @@ private fun NavBarItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(width = 64.dp, height = 36.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isSelected) Color(0xFFEEF2FF) else Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = contentColor.copy(alpha = alpha),
+            modifier = Modifier.size(26.dp)
+        )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-            color = contentColor
+            color = contentColor.copy(alpha = alpha)
         )
     }
 }

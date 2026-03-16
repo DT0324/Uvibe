@@ -228,7 +228,7 @@ fun ClothingRecommendationCard(
             border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
         ) {
             Column(
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier.padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 recommendation.items.forEach { item ->
@@ -254,7 +254,7 @@ fun ClothingItemRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -273,7 +273,7 @@ fun ClothingItemRow(
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Medium,
                 color = Color(0xFF111827)
             )
         }
@@ -533,7 +533,7 @@ fun CurrentLocationButton(
         ) {
             Text(text = "📍", fontSize = 20.sp)
             Text(
-                text = "Use Current Location",
+                text = "Refresh My Location",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold
             )
