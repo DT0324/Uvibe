@@ -15,6 +15,7 @@ import com.example.uvibe.ui.screens.MainMenuScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SunscreenReminderReceiver.createNotificationChannel(this)
 
         // 开启边缘到边缘显示 (沉浸式状态栏)
         enableEdgeToEdge()

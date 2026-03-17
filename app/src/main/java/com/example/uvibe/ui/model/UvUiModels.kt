@@ -59,6 +59,14 @@ data class ClothingRecommendationUiModel(
     val items: List<ClothingItemUiModel>,
 )
 
+data class SunscreenReminderUiModel(
+    val isEnabled: Boolean = false,
+    val reminderIntervalMinutes: Int = 120,
+    val preAlertMinutes: Int = 10,
+    val lastAppliedAtMillis: Long? = null,
+    val nextReminderAtMillis: Long? = null,
+)
+
 
 fun uvRiskLevelFor(uvIndex: Int): UvRiskLevel = when {
     uvIndex <= 2 -> UvRiskLevel.Low
