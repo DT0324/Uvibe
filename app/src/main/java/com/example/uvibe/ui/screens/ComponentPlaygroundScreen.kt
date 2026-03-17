@@ -12,7 +12,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +29,7 @@ import com.example.uvibe.ui.components.ProtectionTipCard
 import com.example.uvibe.ui.components.UVStatusCard
 import com.example.uvibe.ui.model.PreviewUvData
 import com.example.uvibe.ui.model.StaticUvData
+import androidx.compose.runtime.Composable
 
 import com.example.uvibe.ui.theme.UvibeTheme
 
@@ -84,7 +84,8 @@ fun ComponentPlaygroundScreen(
                             // 👈 只需要在这里加上 onRefresh = {}
                             UVStatusCard(
                                 status = PreviewUvData.currentUvStatus,
-                                onRefresh = { /* Playground 暂时不需要真实刷新逻辑 */ }
+                                onRefresh = { /* Playground 暂时不需要真实刷新逻辑 */ },
+                                onLocationClick = { /* Playground 暂时不需要真实刷新逻辑 */ }
                             )
 
                             ProtectionTipCard(tip = PreviewUvData.protectionTip)
