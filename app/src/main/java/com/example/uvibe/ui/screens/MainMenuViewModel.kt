@@ -1,12 +1,15 @@
 package com.example.uvibe.ui.screens
 
 import android.annotation.SuppressLint
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uvibe.network.OnboardingRemoteContent
 import com.example.uvibe.network.OpenWeatherApiClient
 import com.example.uvibe.network.RecommendationContentUi
 import com.example.uvibe.ui.model.AwarenessChartUiModel
+import com.example.uvibe.ui.model.SunscreenReminderUiModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,13 +26,17 @@ sealed interface PageSectionState<out T> {
     data class Error(val message: String) : PageSectionState<Nothing>
 }
 
-class MainMenuViewModel : ViewModel() {
+class MainMenuViewModel(application: Application) : AndroidViewModel(application) {
+    private val fixedPreAlertMinutes = 10
 
     private val _recommendationState = MutableStateFlow<PageSectionState<RecommendationContentUi>>(PageSectionState.Loading)
     val recommendationState: StateFlow<PageSectionState<RecommendationContentUi>> = _recommendationState.asStateFlow()
 
     private val _awarenessState = MutableStateFlow<PageSectionState<List<AwarenessChartUiModel>>>(PageSectionState.Loading)
     val awarenessState: StateFlow<PageSectionState<List<AwarenessChartUiModel>>> = _awarenessState.asStateFlow()
+
+    private val _sunscreenReminderState = MutableStateFlow(SunscreenReminderUiModel())
+    val sunscreenReminderState: StateFlow<SunscreenReminderUiModel> = _sunscreenReminderState.asStateFlow()
 
     // 缓存当前的经纬度，方便手动刷新时复用
     private var currentLat: Double? = null
@@ -40,6 +47,7 @@ class MainMenuViewModel : ViewModel() {
 
     init {
         // 初始化时先加载静态图表数据，推荐数据等定位拿到后再加载
+        _sunscreenReminderState.value = loadSunscreenReminder()
         fetchAwareness()
     }
 
@@ -76,6 +84,32 @@ class MainMenuViewModel : ViewModel() {
         } else {
             loadAllData()
         }
+    }
+
+    fun setSunscreenReminder(
+        reminderIntervalMinutes: Int,
+        startAtMillis: Long = System.currentTimeMillis(),
+    ) {
+        val safeIntervalMinutes = reminderIntervalMinutes.coerceAtLeast(11)
+
+        val state = SunscreenReminderUiModel(
+            isEnabled = true,
+            reminderIntervalMinutes = safeIntervalMinutes,
+            preAlertMinutes = fixedPreAlertMinutes,
+            lastAppliedAtMillis = startAtMillis,
+            nextReminderAtMillis = startAtMillis + safeIntervalMinutes * 60_000L,
+        )
+        _sunscreenReminderState.value = state
+        saveSunscreenReminder(state)
+    }
+
+    fun clearSunscreenReminder() {
+        _sunscreenReminderState.value = SunscreenReminderUiModel()
+        saveSunscreenReminder(SunscreenReminderUiModel())
+    }
+
+    fun refreshSunscreenReminder() {
+        _sunscreenReminderState.value = loadSunscreenReminder()
     }
 
     private suspend fun fetchDataWithStoredLocation() {
@@ -129,5 +163,47 @@ class MainMenuViewModel : ViewModel() {
         }
         is IOException -> "Network error while contacting the AWS API."
         else -> message ?: "Unable to load onboarding data right now."
+    }
+
+    private fun saveSunscreenReminder(state: SunscreenReminderUiModel) {
+        reminderPrefs().edit()
+            .putBoolean(KEY_ENABLED, state.isEnabled)
+            .putInt(KEY_INTERVAL_MINUTES, state.reminderIntervalMinutes)
+            .putInt(KEY_PRE_ALERT_MINUTES, state.preAlertMinutes)
+            .putLong(KEY_LAST_APPLIED_AT, state.lastAppliedAtMillis ?: -1L)
+            .putLong(KEY_NEXT_REMINDER_AT, state.nextReminderAtMillis ?: -1L)
+            .apply()
+    }
+
+    private fun loadSunscreenReminder(): SunscreenReminderUiModel {
+        val prefs = reminderPrefs()
+        val lastAppliedAt = prefs.getLong(KEY_LAST_APPLIED_AT, -1L).takeIf { it > 0L }
+        val nextReminderAt = prefs.getLong(KEY_NEXT_REMINDER_AT, -1L).takeIf { it > 0L }
+
+        val state = SunscreenReminderUiModel(
+            isEnabled = prefs.getBoolean(KEY_ENABLED, false),
+            reminderIntervalMinutes = prefs.getInt(KEY_INTERVAL_MINUTES, 120),
+            preAlertMinutes = fixedPreAlertMinutes,
+            lastAppliedAtMillis = lastAppliedAt,
+            nextReminderAtMillis = nextReminderAt,
+        )
+
+        return if (state.nextReminderAtMillis != null && state.nextReminderAtMillis <= System.currentTimeMillis()) {
+            SunscreenReminderUiModel()
+        } else {
+            state
+        }
+    }
+
+    private fun reminderPrefs() =
+        getApplication<Application>().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
+    private companion object {
+        const val PREF_NAME = "uvibe_sunscreen_reminder"
+        const val KEY_ENABLED = "enabled"
+        const val KEY_INTERVAL_MINUTES = "interval_minutes"
+        const val KEY_PRE_ALERT_MINUTES = "pre_alert_minutes"
+        const val KEY_LAST_APPLIED_AT = "last_applied_at"
+        const val KEY_NEXT_REMINDER_AT = "next_reminder_at"
     }
 }

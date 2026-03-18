@@ -9,10 +9,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,9 +37,12 @@ import com.example.uvibe.ui.model.MythInfoUiModel
 import com.example.uvibe.ui.model.PreviewUvData
 import com.example.uvibe.ui.model.ProtectionTipUiModel
 import com.example.uvibe.ui.model.StaticUvData
+import com.example.uvibe.ui.model.SunscreenReminderUiModel
 import com.example.uvibe.ui.model.UvRiskLevel
 import com.example.uvibe.ui.model.UvStatusUiModel
 import com.example.uvibe.ui.theme.UvibeTheme
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
@@ -575,6 +584,61 @@ fun CurrentLocationButton(
             )
         }
     }
+}
+
+@Composable
+fun SunscreenReminderCard(
+    reminder: SunscreenReminderUiModel,
+    onOpenReminderPage: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val now by produceState(initialValue = System.currentTimeMillis(), reminder.isEnabled) {
+        while (true) {
+            value = System.currentTimeMillis()
+            delay(1_000)
+        }
+    }
+
+    val remainingMillis = ((reminder.nextReminderAtMillis ?: now) - now).coerceAtLeast(0L)
+    val totalMillis = reminder.reminderIntervalMinutes * 60_000L
+    SectionCard(
+        modifier = modifier.clickable(onClick = onOpenReminderPage),
+        containerColor = Color(0xFFF8FAFF)
+    ) {
+        if (reminder.isEnabled) {
+            Text(
+                text = formatDuration(remainingMillis),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF111827)
+            )
+        } else {
+            Text(
+                text = "No reminder set",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF111827)
+            )
+        }
+    }
+}
+
+private fun formatDuration(durationMillis: Long): String {
+    val totalSeconds = durationMillis / 1_000L
+    val hours = totalSeconds / 3_600L
+    val minutes = (totalSeconds % 3_600L) / 60L
+    val seconds = totalSeconds % 60L
+
+    return when {
+        hours > 0 -> String.format(Locale.getDefault(), "%dh %02dm %02ds left", hours, minutes, seconds)
+        minutes > 0 -> String.format(Locale.getDefault(), "%dm %02ds left", minutes, seconds)
+        else -> String.format(Locale.getDefault(), "%ds left", seconds)
+    }
+}
+
+private fun formatClockTime(timeMillis: Long?): String {
+    if (timeMillis == null) return "--"
+    return SimpleDateFormat("h:mm a", Locale.getDefault()).format(timeMillis)
 }
 
 @Composable
