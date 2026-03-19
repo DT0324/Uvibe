@@ -24,14 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -44,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.uvibe.SunscreenReminderScheduler
+import com.example.uvibe.util.SunscreenReminderScheduler
 import com.example.uvibe.network.RecommendationContentUi
 import com.example.uvibe.ui.components.*
 import com.example.uvibe.ui.model.AwarenessChartUiModel
@@ -164,40 +162,6 @@ fun MainMenuScreen(
                         color = Color(0xFF6B7280),
                         fontWeight = FontWeight.Normal
                     )
-                }
-
-                // Modern Tab Switcher
-                Surface(
-                    modifier = Modifier
-                        .padding(horizontal = 22.dp, vertical = 8.dp)
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFFF3F4F6)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TabItem(
-                            title = "UV TRACKER",
-                            isSelected = selectedTabIndex == 0,
-                            onClick = { selectedTabIndex = 0 },
-                            modifier = Modifier.weight(1f)
-                        )
-                        TabItem(
-                            title = "REMINDER",
-                            isSelected = selectedTabIndex == 1,
-                            onClick = { selectedTabIndex = 1 },
-                            modifier = Modifier.weight(1f)
-                        )
-                        TabItem(
-                            title = "AWARENESS",
-                            isSelected = selectedTabIndex == 2,
-                            onClick = { selectedTabIndex = 2 },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
                 }
 
                 AnimatedContent(

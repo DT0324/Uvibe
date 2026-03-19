@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 
 // 导入我们在 views 包下写好的界面
 import com.example.uvibe.ui.screens.MainMenuScreen
+import com.example.uvibe.util.SunscreenReminderReceiver
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
