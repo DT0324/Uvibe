@@ -3,6 +3,7 @@ package com.example.uvibe.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,30 +16,37 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.uvibe.data.skinTypeData
 import com.example.uvibe.ui.model.AwarenessChartUiModel
 import com.example.uvibe.ui.model.ClothingItemUiModel
 import com.example.uvibe.ui.model.ClothingRecommendationUiModel
 import com.example.uvibe.ui.model.MythInfoUiModel
 import com.example.uvibe.ui.model.PreviewUvData
 import com.example.uvibe.ui.model.ProtectionTipUiModel
+import com.example.uvibe.ui.model.SkinTypeModel
 import com.example.uvibe.ui.model.StaticUvData
 import com.example.uvibe.ui.model.SunscreenReminderUiModel
 import com.example.uvibe.ui.model.UvForecastUiModel
@@ -818,6 +826,206 @@ fun ErrorStateView(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SkinTypeSelectionComponent(
+    modifier: Modifier = Modifier,
+    titleIcon: ImageVector = Icons.Default.Palette,
+    onSkinTypeSelected: (recommendedMinutes: Int) -> Unit = {}
+) {
+    // 状态管理：存储当前选择的肤色 ID，默认选择 "Fair"
+    var selectedSkinTypeId by remember { mutableIntStateOf(1) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // 1. 标题行
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            Icon(
+                imageVector = titleIcon,
+                contentDescription = "Palette Icon",
+                tint = Color.Gray,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Your Skin Type",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+        }
+
+        // 2. 描述文字
+        Text(
+            text = "Select your skin tone to receive personalized UV protection advice",
+            fontSize = 14.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // 3. 肤色选择行
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            items(skinTypeData) { skinType ->
+                SkinTypeItem(
+                    skinType = skinType,
+                    isSelected = skinType.id == selectedSkinTypeId,
+                    onClick = {
+                        selectedSkinTypeId = skinType.id
+                        // 👈 核心联动：点击时，把这个肤色推荐的分钟数传出去！
+                        onSkinTypeSelected(skinType.reapplyMinutes)
+                    }
+                )
+            }
+        }
+
+        // 4. 信息卡片
+        // 根据选择的 ID 查找对应的肤色模型，如果找到则显示卡片
+        skinTypeData.find { it.id == selectedSkinTypeId }?.let { selectedSkinType ->
+            PersonalizedProtectionCard(selectedSkinType = selectedSkinType)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SkinTypeItem(
+    skinType: SkinTypeModel,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    // 根据是否选中，定义边框和颜色
+    val borderColor = if (isSelected) Color(0xFF007BFF) else Color(0xFFE0E0E0)
+    val borderThickness = if (isSelected) 2.dp else 1.dp
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(borderThickness, borderColor),
+        color = Color.White,
+        modifier = Modifier
+            .width(72.dp)
+            .aspectRatio(1f) // 使其保持正方形
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(4.dp)
+        ) {
+            // 圆形肤色预览
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(skinType.color)
+                    .border(1.dp, Color(0xFFE0E0E0), CircleShape) // 圆形预览本身的灰色边框
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = skinType.label,
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+// 子组件：个性化防护卡片
+@Composable
+fun PersonalizedProtectionCard(selectedSkinType: SkinTypeModel) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFE8F5FF), // 蓝色背景
+        border = BorderStroke(1.dp, Color(0xFFB0E2FF)), // 蓝色边框
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 1. 卡片标题
+            Text(
+                text = "Personalized Protection for ${selectedSkinType.label} Skin",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            // 2. 特征行
+            ProtectionDetailRow(key = "Skin Type:", value = selectedSkinType.description)
+            ProtectionDetailRow(key = "Burn Time (UV Index 8):", value = selectedSkinType.burnTimeDesc)
+            ProtectionDetailRow(key = "Recommended SPF:", value = selectedSkinType.spf)
+
+            // 3. Protection Tips 部分
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Protection Tips:",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            // Tips 下面的蓝线
+            Divider(color = Color(0xFFB0E2FF), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 4. Tips 列表
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                selectedSkinType.protectionTips.forEach { tip ->
+                    ProtectionTipItem(tip = tip)
+                }
+            }
+        }
+    }
+}
+
+// 辅助组件：用于渲染键值对的特征行
+@Composable
+fun ProtectionDetailRow(key: String, value: String) {
+    Row(modifier = Modifier.padding(vertical = 4.dp)) {
+        Text(
+            text = key,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+    }
+}
+
+// 辅助组件：用于渲染带圆点的 Tip 行
+@Composable
+fun ProtectionTipItem(tip: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        // 圆点
+        Box(
+            modifier = Modifier
+                .padding(top = 4.dp, start = 4.dp, end = 8.dp)
+                .size(4.dp)
+                .clip(CircleShape)
+                .background(Color.Gray)
+        )
+        // Tip 文本
+        Text(
+            text = tip,
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
+    }
+}
+
 
 
 @Preview(showBackground = true)
@@ -859,4 +1067,12 @@ fun UVStatusCardPreview() {
         onRefresh = {},
         onLocationClick = {}
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SkinTypeSelectionComponentPreview() {
+    MaterialTheme {
+        SkinTypeSelectionComponent()
+    }
 }
