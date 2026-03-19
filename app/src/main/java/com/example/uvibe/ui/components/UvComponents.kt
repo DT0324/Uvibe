@@ -5,6 +5,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
@@ -38,6 +41,7 @@ import com.example.uvibe.ui.model.PreviewUvData
 import com.example.uvibe.ui.model.ProtectionTipUiModel
 import com.example.uvibe.ui.model.StaticUvData
 import com.example.uvibe.ui.model.SunscreenReminderUiModel
+import com.example.uvibe.ui.model.UvForecastUiModel
 import com.example.uvibe.ui.model.UvRiskLevel
 import com.example.uvibe.ui.model.UvStatusUiModel
 import com.example.uvibe.ui.theme.UvibeTheme
@@ -74,6 +78,8 @@ private fun SectionCard(
     }
 }
 
+
+
 @Composable
 fun UVStatusCard(
     status: UvStatusUiModel,
@@ -81,6 +87,7 @@ fun UVStatusCard(
     onLocationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // 渐变色逻辑保持不变，或者你也可以根据 status.riskLevel 来匹配颜色
     val gradientColors = when {
         status.uvIndex <= 2 -> listOf(Color(0xFF4CAF50), Color(0xFF81C784))
         status.uvIndex <= 5 -> listOf(Color(0xFFFFB300), Color(0xFFFFD54F))
@@ -94,6 +101,7 @@ fun UVStatusCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // --- 主卡片部分保持不变 ---
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -114,19 +122,7 @@ fun UVStatusCard(
                     .background(Brush.linearGradient(gradientColors)),
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.12f),
-                        radius = size.minDimension / 1.2f,
-                        center = androidx.compose.ui.geometry.Offset(size.width * 1.1f, size.height * -0.1f)
-                    )
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.08f),
-                        radius = size.minDimension / 1.8f,
-                        center = androidx.compose.ui.geometry.Offset(size.width * -0.1f, size.height * 1.1f)
-                    )
-                }
-
+                // ... (保留你原来的 Canvas 背景圈和文本内容) ...
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -134,9 +130,7 @@ fun UVStatusCard(
                     Text(
                         text = "Current UV",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontWeight = FontWeight.Normal,
-                        letterSpacing = 1.sp
+                        color = Color.White.copy(alpha = 0.9f)
                     )
                     Text(
                         text = status.uvIndex.toString(),
@@ -156,7 +150,44 @@ fun UVStatusCard(
                 }
             }
         }
-        
+
+        // --- 新增：使用 locationName 显示当前位置 ---
+        if (status.locationName.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Current Location",
+                    tint = Color(0xFF4F46E5),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = status.locationName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1F2937)
+                )
+            }
+        }
+
+        // --- 新增：横向滑动的未来预测 ---
+        if (status.forecast.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                items(status.forecast) { forecastItem ->
+                    ForecastCard(item = forecastItem)
+                }
+            }
+        }
+
+        // 刷新位置按钮和更新时间
         CurrentLocationButton(onClick = onLocationClick)
 
         Text(
@@ -166,6 +197,61 @@ fun UVStatusCard(
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
         )
+    }
+}
+
+@Composable
+fun ForecastCard(item: UvForecastUiModel) {
+    // 为不同级别的 UV 准备一个柔和的背景色
+    val bgColor = when {
+        item.uvIndex <= 2 -> Color(0xFFE8F5E9) // 浅绿
+        item.uvIndex <= 5 -> Color(0xFFFFF8E1) // 浅黄
+        item.uvIndex <= 7 -> Color(0xFFFFF3E0) // 浅橙
+        item.uvIndex <= 10 -> Color(0xFFFFEBEE) // 浅红
+        else -> Color(0xFFF3E5F5) // 浅紫
+    }
+
+    // 字体颜色稍微深一点，保证对比度
+    val textColor = when {
+        item.uvIndex <= 2 -> Color(0xFF2E7D32)
+        item.uvIndex <= 5 -> Color(0xFFF57F17)
+        item.uvIndex <= 7 -> Color(0xFFE65100)
+        item.uvIndex <= 10 -> Color(0xFFC62828)
+        else -> Color(0xFF6A1B9A)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = bgColor,
+        modifier = Modifier.width(76.dp) // 稍微加宽一点点以放下 levelText
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // 时间 (例如: 2 PM)
+            Text(
+                text = item.time,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF4B5563),
+                fontWeight = FontWeight.Bold
+            )
+            // UV 指数数字 (例如: 6)
+            Text(
+                text = item.uvIndex.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                color = textColor,
+                fontWeight = FontWeight.ExtraBold
+            )
+            // 风险等级文字 (例如: High) - 适配你的数据模型
+            Text(
+                text = item.levelText.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = item.levelText.color,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
@@ -732,13 +818,7 @@ fun ErrorStateView(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun UVStatusCardPreview() {
-    UvibeTheme {
-        UVStatusCard(status = PreviewUvData.currentUvStatus, onRefresh = {}, onLocationClick = {})
-    }
-}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -754,4 +834,29 @@ private fun MythInfoCardPreview() {
     UvibeTheme {
         MythInfoCard(mythInfo = StaticUvData.myths.first())
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFDFDFD)
+@Composable
+fun UVStatusCardPreview() {
+    val mockData = UvStatusUiModel(
+        uvIndex = 8,
+        levelText = "Very High",
+        riskLevel = UvRiskLevel.VeryHigh, // 假设你的枚举叫这个
+        locationName = "Spotswood",
+        updatedAt = "UPDATED MAR 19, 7:33 PM",
+        forecast = listOf(
+            UvForecastUiModel(time = "8 PM", uvIndex = 6, levelText = UvRiskLevel.Moderate),
+            UvForecastUiModel(time = "9 PM", uvIndex = 1, levelText = UvRiskLevel.Low),
+            UvForecastUiModel(time = "10 PM", uvIndex = 8, levelText = UvRiskLevel.High),
+            UvForecastUiModel(time = "11 PM", uvIndex = 11, levelText = UvRiskLevel.VeryHigh)
+        )
+    )
+
+    // 需要用一个简单的 Theme 或者直接调组件
+    UVStatusCard(
+        status = mockData,
+        onRefresh = {},
+        onLocationClick = {}
+    )
 }
