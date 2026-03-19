@@ -3,6 +3,7 @@ package com.example.uvibe.ui.screens
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.location.Geocoder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uvibe.network.OnboardingRemoteContent
@@ -10,6 +11,9 @@ import com.example.uvibe.network.OpenWeatherApiClient
 import com.example.uvibe.network.RecommendationContentUi
 import com.example.uvibe.ui.model.AwarenessChartUiModel
 import com.example.uvibe.ui.model.SunscreenReminderUiModel
+import com.example.uvibe.ui.model.UvForecastUiModel
+import com.example.uvibe.ui.model.uvRiskLevelFor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +21,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 sealed interface PageSectionState<out T> {
     data object Loading : PageSectionState<Nothing>
@@ -119,18 +127,84 @@ class MainMenuViewModel(application: Application) : AndroidViewModel(application
         val lon = currentLon ?: return
 
         val result = runCatching {
-            // 1. 去 OpenWeatherMap 查最新的 UV 指数
+            // 1. 获取当前所在的 Suburb (例如: Spotswood)
+            val locationName = getSuburbName(lat, lon)
+
+            // 2. 去 OpenWeatherMap 查最新的当前 UV 和未来预报 (hourly)
             val owmResponse = OpenWeatherApiClient.service.getCurrentUv(lat, lon)
             val realUvIndex = owmResponse.current?.uvi?.toInt() ?: 0
 
-            // 2. 拿着最新的 UV 指数，去 AWS 请求穿搭推荐
-            OnboardingRemoteContent.loadRecommendationContent(uvIndex = realUvIndex)
+            // 3. 解析预测数据 (去掉第1个也就是现在的时间，取接下来的 5 个小时)
+            val forecastList = owmResponse.hourly
+                ?.drop(1)
+                ?.take(5)
+                ?.map { hourlyData ->
+                    val uvi = hourlyData.uvi?.toInt() ?: 0
+                    UvForecastUiModel(
+                        time = formatUnixTime(hourlyData.dt ?: 0L),
+                        uvIndex = uvi,
+                        levelText = uvRiskLevelFor(uvi)
+                    )
+                } ?: emptyList()
+
+            // 4. 去 AWS 请求穿搭推荐和防护建议 (保留你原有的逻辑)
+            val recommendationContent = OnboardingRemoteContent.loadRecommendationContent(uvIndex = realUvIndex)
+
+            // 5. ⭐️ 核心拼接：把 OWM 的真实数据和 AWS 的推荐数据组合起来！
+            val updatedStatus = recommendationContent.status.copy(
+                uvIndex = realUvIndex,
+                levelText = uvRiskLevelFor(realUvIndex).label, // 👈 换成这个
+                riskLevel = uvRiskLevelFor(realUvIndex),
+                locationName = locationName,                       // 注入 Suburb
+                forecast = forecastList                            // 注入预测列表
+            )
+
+            // 返回组装好的最终 UI 状态
+            recommendationContent.copy(status = updatedStatus)
         }
 
         _recommendationState.value = result.fold(
             onSuccess = { PageSectionState.Success(it) },
             onFailure = { PageSectionState.Error(it.toUserMessage()) }
         )
+    }
+
+    // --- 新增的辅助方法 ---
+
+    /**
+     * 将经纬度转换为 Suburb 名称 (运行在 IO 线程防止卡顿)
+     */
+    private suspend fun getSuburbName(lat: Double, lon: Double): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(getApplication(), Locale.getDefault())
+                // 获取最多 1 个匹配地址
+                val addresses = geocoder.getFromLocation(lat, lon, 1)
+
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    // subLocality 通常是 Suburb (如 Spotswood), locality 通常是 City (如 Melbourne)
+                    address.subLocality ?: address.locality ?: "Current Location"
+                } else {
+                    "Current Location"
+                }
+            } catch (e: Exception) {
+                // 如果没有网络或者 Geocoder 服务不可用，返回一个默认值
+                "Current Location"
+            }
+        }
+    }
+
+    /**
+     * 将 OpenWeatherMap 的 Unix 时间戳转换为 "2 PM" 格式
+     */
+    private fun formatUnixTime(dt: Long): String {
+        if (dt == 0L) return ""
+        // OWM 返回的是秒，Java 的 Date 需要毫秒，所以乘 1000
+        val date = Date(dt * 1000)
+        // "h a" 代表 12小时制 + AM/PM
+        val format = SimpleDateFormat("h a", Locale.getDefault())
+        return format.format(date)
     }
 
     private fun fetchRecommendation() {

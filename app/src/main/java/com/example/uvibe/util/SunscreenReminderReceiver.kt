@@ -1,4 +1,4 @@
-package com.example.uvibe
+package com.example.uvibe.util
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -12,6 +12,8 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.uvibe.MainActivity
+import com.example.uvibe.R
 
 class SunscreenReminderReceiver : BroadcastReceiver() {
 

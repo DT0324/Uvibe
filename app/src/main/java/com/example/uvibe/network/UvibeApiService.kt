@@ -93,26 +93,35 @@ object UvibeApiClient {
     }
 }
 
+// 1. 修改原本的响应实体类，加上 hourly 列表
 data class OwmOneCallResponseDto(
     val lat: Double? = null,
     val lon: Double? = null,
     val timezone: String? = null,
-    val current: OwmCurrentDataDto? = null // 👈 对应 JSON 里的 "current"
+    val current: OwmCurrentDataDto? = null,
+    val hourly: List<OwmHourlyDataDto>? = null // 👈 新增：接收每小时预测数据
 )
 
 data class OwmCurrentDataDto(
     val dt: Long? = null,
-    val uvi: Double? = null, // 👈 终于找到你！这就是我们要的 UV 指数
+    val uvi: Double? = null,
     val temp: Double? = null
 )
 
+// 2. 新增：对应 JSON 里的 "hourly" 数组中的每一个对象
+data class OwmHourlyDataDto(
+    val dt: Long? = null,  // 预测的时间戳 (Unix Timestamp)
+    val uvi: Double? = null // 预测的 UV 指数
+)
+
+// 3. 修改接口
 interface OpenWeatherApiService {
-    @GET("onecall") // 完整路径会变成 https://api.openweathermap.org/data/3.0/onecall
+    @GET("onecall")
     suspend fun getCurrentUv(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("exclude") exclude: String = "minutely,hourly,daily,alerts",
-        // 这里需要你在 local.properties 里配置 OWM_API_KEY
+        // 👇 修改这里：把 hourly 从排除名单里拿掉！(保留 minutely, daily, alerts)
+        @Query("exclude") exclude: String = "minutely,daily,alerts",
         @Query("appid") apiKey: String = BuildConfig.OWM_API_KEY
     ): OwmOneCallResponseDto
 }
@@ -120,7 +129,6 @@ interface OpenWeatherApiService {
 object OpenWeatherApiClient {
     val service: OpenWeatherApiService by lazy {
         Retrofit.Builder()
-            // 绑定 OpenWeatherMap 的基础 URL
             .baseUrl("https://api.openweathermap.org/data/3.0/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()

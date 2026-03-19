@@ -1,4 +1,4 @@
-package com.example.uvibe
+package com.example.uvibe.util
 
 import android.app.AlarmManager
 import android.app.PendingIntent

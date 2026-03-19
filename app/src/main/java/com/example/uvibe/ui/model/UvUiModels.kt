@@ -22,6 +22,7 @@ data class UvStatusUiModel(
     val riskLevel: UvRiskLevel,
     val locationName: String,
     val updatedAt: String,
+    val forecast: List<UvForecastUiModel> = emptyList()
 )
 
 data class ProtectionTipUiModel(
@@ -94,6 +95,14 @@ object StaticUvData {
         ),
     )
 }
+
+data class UvForecastUiModel(
+    val time: String,
+    val uvIndex: Int,
+    val levelText: UvRiskLevel
+)
+
+
 
 
 object PreviewUvData {
