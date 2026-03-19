@@ -482,6 +482,21 @@ private fun ReminderSettingsPage(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
+
+        SkinTypeSelectionComponent(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            onSkinTypeSelected = { recommendedMinutes ->
+                selectedInterval = recommendedMinutes
+
+
+                customIntervalInput = if (recommendedMinutes in commonOptions) {
+                    ""
+                } else {
+                    recommendedMinutes.toString()
+                }
+            }
+        )
+
         CardSection(
             title = "Next Reapplication",
             description = "Choose a common duration or enter any whole number of minutes over 10."
@@ -531,6 +546,7 @@ private fun ReminderSettingsPage(
                 shape = RoundedCornerShape(18.dp)
             )
         }
+
 
         CardSection(
             title = "Notification",

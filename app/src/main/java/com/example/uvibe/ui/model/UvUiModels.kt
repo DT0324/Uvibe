@@ -68,6 +68,17 @@ data class SunscreenReminderUiModel(
     val nextReminderAtMillis: Long? = null,
 )
 
+data class SkinTypeModel(
+    val id: Int,
+    val color: Color, // 肤色颜色预览
+    val label: String, // 文本标签（如 "Fair"）
+    val description: String, // 肤色特征描述
+    val burnTimeDesc: String, // 晒伤时间描述
+    val spf: String, // 推荐 SPF
+    val reapplyMinutes: Int,
+    val protectionTips: List<String> // 防护 Tips 列表
+)
+
 
 fun uvRiskLevelFor(uvIndex: Int): UvRiskLevel = when {
     uvIndex <= 2 -> UvRiskLevel.Low
@@ -76,6 +87,7 @@ fun uvRiskLevelFor(uvIndex: Int): UvRiskLevel = when {
     uvIndex <= 10 -> UvRiskLevel.VeryHigh
     else -> UvRiskLevel.Extreme
 }
+
 
 fun defaultClothingHeadline(riskLevel: UvRiskLevel): String =
     "UV ${riskLevel.label.lowercase()} today. Dress for safer outdoor time."
